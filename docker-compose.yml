@@ -1,0 +1,10 @@
+version: '2.3'
+services:
+  inf-tflite-1-14:
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    build: .
+    container_name: inf-tflite-1-14
+    volumes:
+      - ./:/usr/src/app
