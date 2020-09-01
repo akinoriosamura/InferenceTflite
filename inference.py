@@ -6,6 +6,8 @@ import argparse
 import numpy as np
 import cv2
 import os
+import matplotlib.pyplot as plt
+from skimage import io
 
 from tensorflow.lite.python.interpreter import Interpreter
 
@@ -52,29 +54,39 @@ if __name__ == '__main__':
 
     # 入力画像のリサイズ
     if (".png" in args.image) or (".PNG" in args.image):
-        img = np.array(cv2.imread(args.image, -1))
+        img = np.array(cv2.imread(args.image))
     else:
         img = np.array(cv2.imread(args.image))
     img = cv2.resize(img, (width, height))
+    img_tmp = img.copy()
 
     # 入力データの生成
-    input_data = np.expand_dims(img, axis=0)
+    input_data = img.astype(np.float32)
+    input_data = (input_data) / 256
+    input_data = np.expand_dims(input_data, axis=0)
 
     # Floatingモデルのデータ変換
     # if floating_model:
     #     input_data = (np.float32(input_data) - args.input_mean) / args.input_std
-    input_data = input_data / 256
- 
     # 入力をインタプリタに指定
     interpreter.set_tensor(input_details[0]['index'], input_data)
 
     # 推論の実行
+    import time
+    st = time.time()
     interpreter.invoke()
+    print("el: ", time.time() - st)
 
     # 出力の取得
     import pdb; pdb.set_trace()
     output_data = interpreter.get_tensor(output_details[0]['index'])
-    results = np.squeeze(output_data)
+    results_land = np.squeeze(output_data).reshape(-1, 3)
+    iris = interpreter.get_tensor(output_details[1]['index'])
+    results_iris = np.squeeze(iris).reshape(-1, 3)
+    for land in results_land:
+        cv2.circle(img, (int(land[0]), int(land[1])), 1, (0, 0, 255))
+    for re in results_iris:
+        cv2.circle(img, (int(re[0]), int(re[1])), 1, (0, 255, 0))
 
-    pred_path = os.path.join("./preds", args.image[:-4] + "_pred.png") 
-    cv2.imwrite(pred_path, results)
+    save_img_path = args.image[:-4] + "_labeled.png"
+    cv2.imwrite(save_img_path, img)
