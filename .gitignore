@@ -2,3 +2,4 @@
 *.png
 *.PNG
 .mypy_cache
+.mypy_cache/*
